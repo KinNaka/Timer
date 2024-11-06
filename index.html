@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png"> <!-- Tùy chọn thêm biểu tượng ứng dụng -->
+    <title>Multiple Timer Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #f4f4f9;
+        }
+
+        .timer-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+
+        .timer {
+            font-size: 50px;
+            font-weight: bold;
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button.start {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        button.stop {
+            background-color: #f44336;
+            color: white;
+        }
+
+        input[type="number"] {
+            padding: 5px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .timer-list {
+            margin-top: 30px;
+        }
+
+        .timer-item {
+            margin: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+
+        .timer-item button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Multiple Timer Tracker</h1>
+    <div class="timer-container">
+        <h2>Create New Timer</h2>
+        <input type="number" id="hoursInput" placeholder="Hours" min="0"> :
+        <input type="number" id="minutesInput" placeholder="Minutes" min="0"> :
+        <input type="number" id="secondsInput" placeholder="Seconds" min="0">
+        <br>
+        <button class="start" onclick="addTimer()">Add Timer</button>
+    </div>
+
+    <div class="timer-list" id="timerList">
+        <!-- Dynamically added timers will appear here -->
+    </div>
+
+    <script>
+        let timers = [];
+
+        // Add a new timer
+        function addTimer() {
+            const hours = parseInt(document.getElementById('hoursInput').value) || 0;
+            const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+            const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+
+            const totalTime = hours * 3600 + minutes * 60 + seconds;
+
+            if (totalTime <= 0) {
+                alert("Please enter a valid time.");
+                return;
+            }
+
+            const timerId = timers.length;
+            timers.push({ remainingTime: totalTime, isRunning: false, timer: null });
+
+            const timerItem = document.createElement('div');
+            timerItem.classList.add('timer-item');
+            timerItem.id = `timer${timerId}`;
+
+            const timerDisplay = document.createElement('div');
+            timerDisplay.classList.add('timer');
+            timerDisplay.id = `timerDisplay${timerId}`;
+            timerDisplay.textContent = formatTime(hours) + ':' + formatTime(minutes) + ':' + formatTime(seconds);
+            timerItem.appendChild(timerDisplay);
+
+            const startButton = document.createElement('button');
+            startButton.classList.add('start');
+            startButton.textContent = "Start";
+            startButton.onclick = () => startTimer(timerId);
+            timerItem.appendChild(startButton);
+
+            const stopButton = document.createElement('button');
+            stopButton.classList.add('stop');
+            stopButton.textContent = "Stop";
+            stopButton.onclick = () => stopTimer(timerId);
+            timerItem.appendChild(stopButton);
+
+            document.getElementById('timerList').appendChild(timerItem);
+        }
+
+        // Start the timer
+        function startTimer(timerId) {
+            if (timers[timerId].isRunning) return;
+
+            timers[timerId].isRunning = true;
+            timers[timerId].timer = setInterval(() => updateTimer(timerId), 1000);
+        }
+
+        // Stop the timer
+        function stopTimer(timerId) {
+            clearInterval(timers[timerId].timer);
+            timers[timerId].isRunning = false;
+        }
+
+        // Update the timer
+        function updateTimer(timerId) {
+            if (timers[timerId].remainingTime <= 0) {
+                clearInterval(timers[timerId].timer);
+                timers[timerId].isRunning = false;
+                document.getElementById(`timerDisplay${timerId}`).textContent = "Time's up!";
+                return;
+            }
+
+            timers[timerId].remainingTime--;
+
+            const hours = Math.floor(timers[timerId].remainingTime / 3600);
+            const minutes = Math.floor((timers[timerId].remainingTime % 3600) / 60);
+            const seconds = timers[timerId].remainingTime % 60;
+
+            document.getElementById(`timerDisplay${timerId}`).textContent =
+                formatTime(hours) + ':' + formatTime(minutes) + ':' + formatTime(seconds);
+        }
+
+        // Format time to always have 2 digits
+        function formatTime(time) {
+            return time < 10 ? `0${time}` : time;
+        }
+    </script>
+
+</body>
+
+</html>
