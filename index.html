@@ -40,6 +40,10 @@
             background-color: #f44336;
             color: white;
         }
+        button.delete {
+            background-color: #ff9800;
+            color: white;
+        }
         input[type="number"] {
             padding: 5px;
             font-size: 16px;
@@ -120,6 +124,12 @@
             stopButton.onclick = () => stopTimer(timerId);
             timerItem.appendChild(stopButton);
 
+            const deleteButton = document.createElement('button');
+            deleteButton.classList.add('delete');
+            deleteButton.textContent = "Delete";
+            deleteButton.onclick = () => deleteTimer(timerId);
+            timerItem.appendChild(deleteButton);
+
             document.getElementById('timerList').appendChild(timerItem);
 
             saveTimersToLocalStorage();
@@ -138,6 +148,14 @@
         function stopTimer(timerId) {
             clearInterval(timers[timerId].timer);
             timers[timerId].isRunning = false;
+            saveTimersToLocalStorage();
+        }
+
+        // Delete a timer
+        function deleteTimer(timerId) {
+            clearInterval(timers[timerId].timer);
+            timers.splice(timerId, 1);
+            document.getElementById(`timer${timerId}`).remove();
             saveTimersToLocalStorage();
         }
 
@@ -204,10 +222,17 @@
                     stopButton.onclick = () => stopTimer(index);
                     timerItem.appendChild(stopButton);
 
+                    const deleteButton = document.createElement('button');
+                    deleteButton.classList.add('delete');
+                    deleteButton.textContent = "Delete";
+                    deleteButton.onclick = () => deleteTimer(index);
+                    timerItem.appendChild(deleteButton);
+
                     document.getElementById('timerList').appendChild(timerItem);
 
+                    // Restore the running timers
                     if (timer.isRunning) {
-                        startTimer(index);  // Restore running timers
+                        startTimer(index);
                     }
                 });
             }
