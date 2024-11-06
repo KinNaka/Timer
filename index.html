@@ -3,68 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timer with Local Storage</title>
+    <title>Multiple Timer Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #f4f4f9;
+        }
+        .timer-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+        .timer {
+            font-size: 50px;
+            font-weight: bold;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button.start {
+            background-color: #4CAF50;
+            color: white;
+        }
+        button.stop {
+            background-color: #f44336;
+            color: white;
+        }
+        input[type="number"] {
+            padding: 5px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .timer-list {
+            margin-top: 30px;
+        }
+        .timer-item {
+            margin: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+        .timer-item button {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
-    <h1>Countdown Timer</h1>
-    <div>
-        <button id="startButton">Start Timer</button>
-        <button id="pauseButton">Pause Timer</button>
-        <p id="timerDisplay">00:00</p>
+    <h1>Multiple Timer Tracker</h1>
+    <div class="timer-container">
+        <h2>Create New Timer</h2>
+        <input type="number" id="hoursInput" placeholder="Hours" min="0"> : 
+        <input type="number" id="minutesInput" placeholder="Minutes" min="0"> : 
+        <input type="number" id="secondsInput" placeholder="Seconds" min="0">
+        <br>
+        <button class="start" onclick="addTimer()">Add Timer</button>
+    </div>
+
+    <div class="timer-list" id="timerList">
+        <!-- Dynamically added timers will appear here -->
     </div>
 
     <script>
-        // Lấy các phần tử trong HTML
-        const timerDisplay = document.getElementById('timerDisplay');
-        const startButton = document.getElementById('startButton');
-        const pauseButton = document.getElementById('pauseButton');
+        let timers = [];
 
-        let timer; // Timer ID
-        let timeLeft = 0; // Thời gian còn lại (số giây)
-        let isRunning = false; // Trạng thái đồng hồ
+        // Add a new timer
+        function addTimer() {
+            const hours = parseInt(document.getElementById('hoursInput').value) || 0;
+            const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+            const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
 
-        // Kiểm tra xem có dữ liệu lưu trữ trước đó trong Local Storage không
-        if(localStorage.getItem('timeLeft')) {
-            timeLeft = parseInt(localStorage.getItem('timeLeft'));
-            updateDisplay();
+            const totalTime = hours * 3600 + minutes * 60 + seconds;
+
+            if (totalTime <= 0) {
+                alert("Please enter a valid time.");
+                return;
+            }
+
+            const timerId = timers.length;
+            timers.push({ remainingTime: totalTime, isRunning: false, timer: null });
+
+            const timerItem = document.createElement('div');
+            timerItem.classList.add('timer-item');
+            timerItem.id = `timer${timerId}`;
+
+            const timerDisplay = document.createElement('div');
+            timerDisplay.classList.add('timer');
+            timerDisplay.id = `timerDisplay${timerId}`;
+            timerDisplay.textContent = formatTime(hours) + ':' + formatTime(minutes) + ':' + formatTime(seconds);
+            timerItem.appendChild(timerDisplay);
+
+            const startButton = document.createElement('button');
+            startButton.classList.add('start');
+            startButton.textContent = "Start";
+            startButton.onclick = () => startTimer(timerId);
+            timerItem.appendChild(startButton);
+
+            const stopButton = document.createElement('button');
+            stopButton.classList.add('stop');
+            stopButton.textContent = "Stop";
+            stopButton.onclick = () => stopTimer(timerId);
+            timerItem.appendChild(stopButton);
+
+            document.getElementById('timerList').appendChild(timerItem);
+
+            saveTimersToLocalStorage();
         }
 
-        // Cập nhật hiển thị đồng hồ
-        function updateDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            timerDisplay.textContent = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        // Start the timer
+        function startTimer(timerId) {
+            if (timers[timerId].isRunning) return;
+
+            timers[timerId].isRunning = true;
+            timers[timerId].timer = setInterval(() => updateTimer(timerId), 1000);
+            saveTimersToLocalStorage();
         }
 
-        // Bắt đầu đồng hồ
-        function startTimer() {
-            if(isRunning) return;
-            isRunning = true;
-
-            timer = setInterval(() => {
-                if(timeLeft > 0) {
-                    timeLeft--;
-                    localStorage.setItem('timeLeft', timeLeft); // Lưu trạng thái vào Local Storage
-                    updateDisplay();
-                } else {
-                    clearInterval(timer);
-                    isRunning = false;
-                }
-            }, 1000);
+        // Stop the timer
+        function stopTimer(timerId) {
+            clearInterval(timers[timerId].timer);
+            timers[timerId].isRunning = false;
+            saveTimersToLocalStorage();
         }
 
-        // Tạm dừng đồng hồ
-        function pauseTimer() {
-            clearInterval(timer);
-            isRunning = false;
+        // Update the timer
+        function updateTimer(timerId) {
+            if (timers[timerId].remainingTime <= 0) {
+                clearInterval(timers[timerId].timer);
+                timers[timerId].isRunning = false;
+                document.getElementById(`timerDisplay${timerId}`).textContent = "Time's up!";
+                saveTimersToLocalStorage();
+                return;
+            }
+
+            timers[timerId].remainingTime--;
+
+            const hours = Math.floor(timers[timerId].remainingTime / 3600);
+            const minutes = Math.floor((timers[timerId].remainingTime % 3600) / 60);
+            const seconds = timers[timerId].remainingTime % 60;
+
+            document.getElementById(`timerDisplay${timerId}`).textContent =
+                formatTime(hours) + ':' + formatTime(minutes) + ':' + formatTime(seconds);
+
+            saveTimersToLocalStorage();
         }
 
-        // Gắn sự kiện cho nút Start
-        startButton.addEventListener('click', startTimer);
+        // Format time to always have 2 digits
+        function formatTime(time) {
+            return time < 10 ? `0${time}` : time;
+        }
 
-        // Gắn sự kiện cho nút Pause
-        pauseButton.addEventListener('click', pauseTimer);
+        // Save timers to localStorage
+        function saveTimersToLocalStorage() {
+            localStorage.setItem('timers', JSON.stringify(timers));
+        }
+
+        // Load timers from localStorage
+        function loadTimersFromLocalStorage() {
+            const savedTimers = JSON.parse(localStorage.getItem('timers'));
+            if (savedTimers) {
+                timers = savedTimers;
+                timers.forEach((timer, index) => {
+                    const timerItem = document.createElement('div');
+                    timerItem.classList.add('timer-item');
+                    timerItem.id = `timer${index}`;
+
+                    const timerDisplay = document.createElement('div');
+                    timerDisplay.classList.add('timer');
+                    timerDisplay.id = `timerDisplay${index}`;
+                    const hours = Math.floor(timer.remainingTime / 3600);
+                    const minutes = Math.floor((timer.remainingTime % 3600) / 60);
+                    const seconds = timer.remainingTime % 60;
+                    timerDisplay.textContent = formatTime(hours) + ':' + formatTime(minutes) + ':' + formatTime(seconds);
+                    timerItem.appendChild(timerDisplay);
+
+                    const startButton = document.createElement('button');
+                    startButton.classList.add('start');
+                    startButton.textContent = "Start";
+                    startButton.onclick = () => startTimer(index);
+                    timerItem.appendChild(startButton);
+
+                    const stopButton = document.createElement('button');
+                    stopButton.classList.add('stop');
+                    stopButton.textContent = "Stop";
+                    stopButton.onclick = () => stopTimer(index);
+                    timerItem.appendChild(stopButton);
+
+                    document.getElementById('timerList').appendChild(timerItem);
+
+                    if (timer.isRunning) {
+                        startTimer(index);  // Restore running timers
+                    }
+                });
+            }
+        }
+
+        // Load timers when the page is loaded
+        window.onload = loadTimersFromLocalStorage;
+
     </script>
+
 </body>
 </html>
